@@ -1,8 +1,12 @@
 
 [Initialize DirectX 12](./docs/Initialize.md)
+
 [Lighting](./docs/Lighting.md)
+
 [Texturing](./docs/Texturing.md)
+
 [Blending](./docs/Blending.md)
+
 [Stenciling](./docs/Stenciling.md)
 
 ## Reference

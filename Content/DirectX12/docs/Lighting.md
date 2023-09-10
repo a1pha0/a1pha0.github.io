@@ -3,7 +3,9 @@
 ### Diffuse Lighting
 
 **Lambert's Cosine Law**:
+
 ![iamge](../images/Lambert'sCosineLaw-1.png)
+
 ![iamge](../images/Lambert'sCosineLaw-2.png)
 
 Let BL represent the quantity of incoming light, md be the diffuse albedo color, L be
