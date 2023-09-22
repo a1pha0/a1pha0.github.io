@@ -9,6 +9,10 @@
 
 [Stenciling](./docs/Stenciling.md)
 
+[Rendering Pipeline](./docs/RenderingPipeline.md)
+
+[Collision](./docs/Collision.md)
+
 ## Reference
 
 Introduction to 3D Game Programming with DirectX12 by Frank Luna (Author)

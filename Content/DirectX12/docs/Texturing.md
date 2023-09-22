@@ -176,3 +176,54 @@ We use two separate texture transformation matrices gTexTransform and
 gMatTransform because sometimes it makes more sense for the material to
 transform the textures (for animated materials like water), but sometimes it
 makes more sense for the texture transform to be a property of the object.
+
+### Texture Array
+A texture array stores an array of textures. In C code, a texture array is
+represented by the ID3D12Resource interface just like all resources are (textures
+and buffers). When creating an ID3D12Resource object, there is actually a
+property called DepthOrArraySize that can be set to specify the number of texture elements the texture stores (or the depth for a 3D texture).
+
+In a HLSL file,
+a texture array is represented by the Texture2DArray type:
+Texture2DArray TexArray;
+Now, you have be wondering why we need texture arrays. Why not just do this:
+Texture2D TexArray[4];
+In shader model 5.1 (new to Direct3D 12), we actually can do this. However, this
+was not allowed in previous Direct3D versions. Moreover, indexing textures like
+this may have a little overhead depending on the hardware.
+
+When using a texture array, three texture coordinates are required. The first
+two texture coordinates are the usual 2D texture coordinates; the third texture
+coordinate is an index into the texture array.
+
+### Texture Subresource
+
+In turn, each texture has
+its own mipmap chain. The Direct3D API uses the term *array slice* to refer to an
+element in a texture along with its complete mipmap chain. The Direct3D API uses
+the term *mip slice* to refer to all the mipmaps at a particular level in the texture array.
+A subresource refers to a single mipmap level in a texture array element.
+
+![image](../images/Texture-Subresource.png)
+
+The following utility function is used to compute the linear subresource index
+given the mip level, array index, and the number of mipmap levels:
+``` C++
+inline UINT D3D12CalcSubresource(UINT MipSlice, UINT ArraySlice, UINT PlaneSlice, UINT MipLevels, UINT ArraySize)
+{
+    return MipSlice + ArraySlice * MipLevels + PlaneSlice * MipLevels * ArraySize;
+}
+```
+
+### MSAA
+
+MSAA executes the pixel shader once per pixel,
+at the pixel center, and then shares that color information with its subpixels based
+on visibility (the depth/stencil test is evaluated per subpixel) and coverage (does the
+subpixel center lie inside or outside the polygon?).
+
+### Alpha-To-Coverage
+
+When MSAA is enabled, and alpha-to-coverage is enabled (a member of
+D3D12_BLEND_DESC::AlphaToCoverageEnable = true), the hardware will look at
+the alpha value returned by the pixel shader and use that to determine coverage
