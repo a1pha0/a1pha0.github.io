@@ -1,5 +1,8 @@
+## DirectX 12
 
-[Initialize DirectX 12](./docs/Initialize.md)
+[Initialize](./docs/Initialize.md)
+
+[Rendering Pipeline](./docs/RenderingPipeline.md)
 
 [Lighting](./docs/Lighting.md)
 
@@ -8,8 +11,6 @@
 [Blending](./docs/Blending.md)
 
 [Stenciling](./docs/Stenciling.md)
-
-[Rendering Pipeline](./docs/RenderingPipeline.md)
 
 [Collision](./docs/Collision.md)
 
