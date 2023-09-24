@@ -16,6 +16,6 @@
 
 ## Reference
 
-Introduction to 3D Game Programming with DirectX12 (Frank Luna)
+[Introduction to 3D Game Programming with DirectX12](https://github.com/d3dcoder/d3d12book)
 
-https://www.3dgep.com/learning-directx-12-1/
+<https://www.3dgep.com/learning-directx-12-1/>
