@@ -21,7 +21,6 @@ extents = 0.5 * (vmax - vmin)
 
 [XMVectorMax](https://learn.microsoft.com/en-us/windows/win32/api/directxmath/nf-directxmath-xmvectormax)
 
-
 #### [BoundingOrientedBox](https://learn.microsoft.com/en-us/windows/win32/api/directxcollision/ns-directxcollision-boundingorientedbox)
 
 If we compute the AABB of a mesh in local space, it gets transformed to an oriented bounding box (OBB) in world space.
