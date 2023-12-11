@@ -37,7 +37,7 @@ The primary benefit of mipmapping is seen in the improved filtering when viewing
 ### Undersampling 
 Undersampling occurs when a single screen pixel maps to multiple texels in the texture. If all of the texels that are covering the screen pixel are not taken into consideration during rendering, then the image will appear noisy since neighboring pixels in screen space can be far apart in texture space resulting in a rapid changes in color across neighboring screen pixels.
 
-![image](../images/Undersampling.png)
+![image](images/Undersampling.png)
 
 The image above demonstrates the issue that occurs when the texture is not mipmapped. On the left side of the image are four screen pixels. On the right is the texture that is being sampled to produce the color of each pixel. If the texture is sufficiently far away from the viewer then the resulting pixel colors will be very different from each other resulting in visible noise in the rendered image. Without mipmapping, the only way to resolve this issue is to sample more texels per screen pixel and blend the sampled texels to produce the final color. But how many texels from the texture should be sampled? The number of texels to sample from the texture to produce the correct color is dependent on the area of the texture that is being covered by the screen pixel. If the entire texture can fit in a the space of a single screen pixel (this can happen if the object being rendered is very far away from the viewer) then every single texel in the texture needs to be sampled to produce the correct result. A 512×512 texture would require 262,144 samples (for each screen pixel) to produce the correct color. Obviously this is not practical so pre-filtering the texture using mipmapping provides a solution to this problem.
 
@@ -55,7 +55,7 @@ The filter option of the texture sampler determines how the fetched texel is ble
 
 ##### Minification and Magnification
 
-![image](../images/Texture-Filtering.png)
+![image](images/Texture-Filtering.png)
 
 * Point Filtering
 Point filtering will return the color of the closest texel to the point being sampled. This is the cheapest sampling method because it only performs a single read from the texture and does not perform any blending between neighboring texels. 
@@ -66,7 +66,7 @@ Anisotropic filtering samples the texels in the texture using a sampling pattern
 
 ##### Mipmap Filtering
 
-![image](../images/Mipmap-Filtering.png)
+![image](images/Mipmap-Filtering.png)
 
 * Point Filtering
 Pick and use the mipmap level that best matches the projected screen geometry resolution for texturing.
@@ -88,7 +88,7 @@ else if texCoord < 0 then
     texCoord = 1 - fractional_part(texCoord)
 end if
 ```
-![image](../images/Wrap-Addressing-Mode1.png)
+![image](images/Wrap-Addressing-Mode1.png)
 
 * Mirror
 
@@ -100,7 +100,7 @@ else
     texCoord = fractional_part(texCoord)
 end if
 ```
-![image](../images/Mirror-Addressing-Mode1.png)
+![image](images/Mirror-Addressing-Mode1.png)
 
 * Clamp
 
@@ -112,7 +112,7 @@ else if texCoord < 0 then
     texCoord = 0
 end if
 ```
-![image](../images/Clamp-Addressing-Mode1.png)
+![image](images/Clamp-Addressing-Mode1.png)
 
 * Border
 
@@ -122,7 +122,7 @@ if texCoord < 0 or texCoord > 1 then
     return borderColor
 end if
 ```
-![image](../images/Border-Addressing-Mode.png)
+![image](images/Border-Addressing-Mode.png)
 
 * Mirror Once
 
@@ -133,7 +133,7 @@ if texCoord > 1 then
     texCoord = 1
 end if
 ```
-![image](../images/Mirror-Once-Addressing-Mode-1.png)
+![image](images/Mirror-Once-Addressing-Mode-1.png)
 
 ### Sampler Object
 
@@ -204,7 +204,7 @@ element in a texture along with its complete mipmap chain. The Direct3D API uses
 the term *mip slice* to refer to all the mipmaps at a particular level in the texture array.
 A subresource refers to a single mipmap level in a texture array element.
 
-![image](../images/Texture-Subresource.png)
+![image](images/Texture-Subresource.png)
 
 The following utility function is used to compute the linear subresource index
 given the mip level, array index, and the number of mipmap levels:

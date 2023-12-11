@@ -1,65 +1,114 @@
 ## Initialize DirectX 12
 
-1. Enable the Direct3D 12 Debug Layer   // Always enable the debug layer before doing anything DX12 related
-2. Register the Window Class
-3. Create Window Instance               // AdjustWindowRect
-4. Query DirectX 12 Adapter
-5. Create the DirectX 12 Device         // Enable debug messages in debug mode.
-6. Create the Command Queue
-7. Check for Tearing Support
-8. Create the Swap Chain
-9. Create a Descriptor Heap
-10. Create the Render Target Views
-11. Create a Command Allocator
-12. Create a Command List               // Before the command list can be reset, it must first be closed.
-13. Create a Fence
-14. Create an Event
-15. Window Message Procedure
+1. Enable the Debug Layer
+2. Create a Window
+3. Query the GPU adapters
+4. Create a DirectX 12 Device
+5. Create Command Queues
+6. Check for Tearing Support
+7. Create a Swap Chain
+8.  Create Descriptor Heaps
+9.  Create Render Target Views
+10. Create Command Allocators
+11. Create Command Lists
+12. Create Fences
+13. Handle GPU synchronization
+14. Update & Render
 
-**Graphics Pipeline**
+### Enable the Direct3D 12 Debug Layer
 
-![image](../images/DirectX-12-Rendering-Pipeline.png)
-The image illustrates the various stages of the DirectX 12 rendering pipeline. The blue rectangular blocks represent the fixed-function stages and cannot be modified programmatically. The green rounded-rectangular blocks represent the programmable stages of the graphics pipeline.
+See [D3D12GetDebugInterface](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-d3d12getdebuginterface) and [ID3D12Debug::EnableDebugLayer](https://learn.microsoft.com/en-us/windows/win32/api/d3d12sdklayers/nf-d3d12sdklayers-id3d12debug-enabledebuglayer)
 
-**Command List**
-A Command List is used to issue copy, compute (dispatch), or draw commands. In DirectX 12 commands issued to the command list are not executed immediately like they are with the DirectX 11 immediate context. All command lists in DirectX 12 are deferred; that is, the commands in a command list are only run on the GPU after they have been executed on a command queue.
+### Create a Window
 
-A command list is used for recording commands that are executed on the GPU. Unlike previous versions of DirectX, execution of commands recorded into a command list are always deferred. That is, invoking draw or dispatch commands on a command list are not executed until the command list is sent to the command queue. Unlike the command allocator, the command list can be reused immediately after it has been executed on the command queue. The only restriction is that the command list must be reset first before recording any new commands.
+See [RegisterClassExW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclassexw) and [CreateWindow](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw)
 
-You can use the ID3D12Device::GetNodeCount method to query the number of GPU adapter nodes on the system.
+### Query the GPU adapters
 
-**Command Allocator**
-A command allocator must not be reset until we are sure the GPU has finished executing all the commands in the allocator.
+See [IDXGIFactory1::EnumAdapters1](https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-enumadapters1) and [IDXGIFactory4::EnumWarpAdapter](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumwarpadapter)
 
-A command allocator is the backing memory used by a command list. A command allocator is created using the ID3D12Device::CreateCommandAllocator method and must specify the type of command list the allocator will be used with. The command allocator does not provide any functionality and can only be accessed indirectly through a command list. A command allocator can only be used by a single command list at a time but can be reused after the commands that were recorded into the command list have finished executing on the GPU.
+### DirectX 12 Device
 
-**Command Queue**
-The Command Queue in DirectX 12 has a very simple interface. For most common cases only the ID3D12CommandQueue::ExecuteCommandLists method and the ID3D12CommandQueue::Signal method are used.
+See [D3D12CreateDevice](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-d3d12createdevice)
+
+### Command Queue
+
+See [ID3D12Device::CreateCommandQueue](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommandqueue)
+
+The Command Queue in DirectX 12 has a very simple interface. For most common cases only the `ID3D12CommandQueue::ExecuteCommandLists` method and the `ID3D12CommandQueue::Signal` method are used.
+
+The `ID3D12CommandQueue::Signal` method will append a fence value to the end of the command queue. The fence object that is used to signal the command queue will have it’s completed value set to the value of the signal when processing has reached that point in the command queue.
 
 It is important to understand that each command queue must track it’s own fence and fence value. DirectX 12 defines three different command queue types:
-* Copy: Can be used to issue commands to copy resource data (CPU -> GPU, GPU -> GPU, GPU -> CPU).
-* Compute: Can do everything a Copy queue can do and issue compute (dispatch) commands.
-* Direct: Can do everything a Copy and a Compute queue can do and issue draw commands.
+* **Copy**: Can be used to issue commands to copy resource data (CPU -> GPU, GPU -> GPU, GPU -> CPU).
+* **Compute**: Can do everything a Copy queue can do and issue compute (dispatch) commands.
+* **Direct**: Can do everything a Copy and a Compute queue can do and issue draw commands.
 
-**Fence**
-The Fence object is used to synchronize commands issued to the Command Queue. The fence stores a single value that indicates the last value that was used to signal the fence. Although it is possible to use the same fence object with multiple command queues, it is not reliable to ensure the proper synchronization of commands across command queues. Therefore, it is advised to create at least one fence object for each command queue. Multiple command queues can wait on a fence to reach a specific value, but the fence should only be allowed to be signaled from a single command queue. In addition to the fence object, the application must also track a fence value that is used to signal the fence. An example of performing CPU-GPU synchronization using fences will be shown in the following sections.
+### Tearing Support
 
-**GPU-Synchronization**
-Whenever the CPU is faster at issuing commands than the command queue is at processing those commands, the CPU will have to stall at some point in order to allow the command queue to catch-up to the CPU.
+To create an application that supports variable refresh rate displays, the `DXGI_FEATURE_PRESENT_ALLOW_TEARING` feature must be supported and the `DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING` must be specified when creating the swap chain. Additionally, the `DXGI_PRESENT_ALLOW_TEARING` flag must be used when presenting the swap chain with a sync-interval of 0.
 
-It gets more complicated if you add an additional queue. In this case, you must be careful not to signal the second queue with a fence value that is larger than, but could be completed before, a fence value that was used on another queue using the same fence object. Doing so could result in the fence reaching the fence value from the other queue before the main queue has reached the earlier fence value.
+See [IDXGIFactory5::CheckFeatureSupport](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_5/nf-dxgi1_5-idxgifactory5-checkfeaturesupport)
 
-![image](../images/GPU-Synchronization.png)
+### Swap Chain
 
-The moral of the story is to make sure that every command queue tracks its own fence object and fence value and only signals its own fence object. To be safe, the fence value for a queue should never be allowed to decrease.
+See [IDXGIFactory2::CreateSwapChainForHwnd](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd)
 
-**Descriptor Heap**
+The primary purpose of the swap chain is to present the rendered image to the screen. The swap chain stores no less than two buffers that are used to render the scene. The buffer that is currently being rendered to is called the back buffer and the buffer that is currently being presented is called the front buffer. The back buffer is swapped with the front buffer using the `IDXGISwapChain::Present` method.
 
-A descriptor heap can be considered an array of resource views. As of DirectX 12, before resource views can be created (such as Render Target Views (RTV), Shader Resource Views (SRV), Unordered Access Views (UAV), or Constant Buffer Views (CBV)), a descriptor heap needs to be created.
+![image](images/Swap-Chain-1.png)
+
+### Descriptor Heap
+
+See [ID3D12Device::CreateDescriptorHeap](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device-createdescriptorheap)
+
+A descriptor heap can be visualized as an array of descriptors (views). A view simply describes a resource that resides in GPU memory. As of DirectX 12, before resource views can be created (such as Render Target Views (RTV), Shader Resource Views (SRV), Unordered Access Views (UAV), or Constant Buffer Views (CBV)), a descriptor heap needs to be created.
+
+**RTV**
 
 A render target view (RTV) describes a resource that can be attached to a bind slot of the output merger stage. The render target view describes the resource that receives the final color computed by the pixel shader stage.
 
-**Resource Barrier**
+### Command Allocator
+
+See [ID3D12Device::CreateCommandAllocator](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommandallocator)
+
+A command allocator must not be reset until we are sure the GPU has finished executing all the commands in the allocator.
+
+A command allocator is the backing memory used by a command list. A command allocator is created using the `ID3D12Device::CreateCommandAllocator` method and must specify the type of command list the allocator will be used with. The command allocator does not provide any functionality and can only be accessed indirectly through a command list. A command allocator can only be used by a single command list at a time but can be reused after the commands that were recorded into the command list have finished executing on the GPU.
+
+
+### Command List
+
+See [ID3D12Device::CreateCommandList](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommandlist)
+
+A Command List is used to issue copy, compute (dispatch), or draw commands. In DirectX 12 commands issued to the command list are not executed immediately like they are with the DirectX 11 immediate context. All command lists in DirectX 12 are deferred; that is, the commands in a command list are only run on the GPU after they have been executed on a command queue.
+
+Unlike the command allocator, the command list can be reused immediately after it has been executed on the command queue. The only restriction is that the command list must be reset first before recording any new commands.
+
+### Fence
+
+See [ID3D12Device::CreateFence](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device-createfence)
+
+The Fence object is used to synchronize commands issued to the Command Queue. The fence stores a single value that indicates the last value that was used to signal the fence. Although it is possible to use the same fence object with multiple command queues, it is not reliable to ensure the proper synchronization of commands across command queues. Therefore, it is advised to create at least one fence object for each command queue. Multiple command queues can wait on a fence to reach a specific value, but the fence should only be allowed to be signaled from a single command queue. In addition to the fence object, the application must also track a fence value that is used to signal the fence. An example of performing CPU-GPU synchronization using fences will be shown in the following sections.
+
+### GPU-Synchronization
+
+![image](images/GPU-Synchronization-0.png)
+
+This example demonstrates a typical double-buffered scenario. You might think that using triple-buffering for rendering will reduce the amount of time the CPU has to wait for the GPU to finish its work. Whenever the CPU is faster at issuing commands than the command queue is at processing those commands, the CPU will have to stall at some point in order to allow the command queue to catch-up to the CPU.
+
+It gets more complicated if you add an additional queue. In this case, you must be careful not to signal the second queue with a fence value that is larger than, but could be completed before, a fence value that was used on another queue using the same fence object. Doing so could result in the fence reaching the fence value from the other queue before the main queue has reached the earlier fence value.
+
+![image](images/GPU-Synchronization.png)
+
+Every command queue should track its own fence object and fence value and only signal its own fence object. To be safe, the fence value for a queue should never be allowed to decrease.
+
+
+
+
+
+## Resource Barrier
+
 In DirectX 12, it is the responsibility of the graphics programmer to ensure that resources are in the correct state before using them. Resources must be transitioned from one state to another using a resource barrier and inserting that resource barrier into the command list. 
 
 There are several types of resource barriers:
@@ -72,7 +121,6 @@ There are several types of resource barriers:
     * Write > Write: Avoids race conditions that could be caused by different shaders in a different draw or dispatch trying to write to the same resource (does not avoid race conditions that could be caused in the same draw or dispatch call).
     * A UAV barrier is not needed if the resource is being used as a read-only (Read > Read) resource between draw or dispatches.
 
----
 
 ### Heap and Resources
 
@@ -80,37 +128,39 @@ In DirectX 12 the only interface used to describe a resource is the [ID3D12Resou
 
 DirectX 12 also provides more control over the way the resource is stored in GPU memory. The [ID3D12Heap](https://msdn.microsoft.com/en-us/library/windows/desktop/dn788687(v=vs.85).aspx) interface allows for various memory mapping techniques to be implemented which may be used to optimize GPU memory utilization.
 
-In the first lesson a swap chain is created which internally contains one or more texture resources that are used to present the final rendered image to the screen. The creation of the texture resource for the swap chain is hidden in the [IDXGIFactory2::CreateSwapChainForHwnd](https://msdn.microsoft.com/en-us/library/hh404557(v=vs.85).aspx) method. In this case, the graphics programmer has no control over how and where the resource is created. In this lesson, several buffer resources are required to render the scene. For these resources, the graphics programmer must decide how those buffer resources are created. There are several different ways that GPU resources are allocated within a memory heap ([ID3D12Heap](https://msdn.microsoft.com/en-us/library/dn788687(v=vs.85).aspx)):
+A swap chain contains one or more texture resources that are used to present the final rendered image to the screen. The creation of the texture resource for the swap chain is hidden in the [IDXGIFactory2::CreateSwapChainForHwnd](https://msdn.microsoft.com/en-us/library/hh404557(v=vs.85).aspx) method. In this case, the graphics programmer has no control over how and where the resource is created. In this section, several buffer resources are required to render the scene. For these resources, the graphics programmer must decide how those buffer resources are created. There are several different ways that GPU resources are allocated within a memory heap ([ID3D12Heap](https://msdn.microsoft.com/en-us/library/dn788687(v=vs.85).aspx)):
 
-* Committed Resources
+* **Committed Resources**
 
 A committed resource is created using the [ID3D12Device::CreateCommittedResource](https://msdn.microsoft.com/en-us/library/dn899178(v=vs.85).aspx) method. This method creates both the resource and an implicit heap that is large enough to hold the resource. The resource is also mapped to the heap. Committed resources are easy to manage because the graphics programmer doesn’t need to be concerned with placing the resource within the heap.
 
-![image](../images/Committed-Resources.png)
+![image](images/Committed-Resources.png)
 
 Committed resources are ideal for allocating large resources like textures or statically sized resources (the size of the resource does not change). Committed resource are also commonly used to create large resource in an upload heap that can be used for uploading dynamic vertex or index buffers (useful for UI rendering or uploading constant buffer data that is changing for each draw call).
 
-* Placed Resources
+* **Placed Resources**
 
 A placed resource is explicitly placed in a heap at a specific offset within the heap. Before a placed resource can be created, first a heap is created using the [ID3D12Device::CreateHeap](https://msdn.microsoft.com/en-us/library/dn788664(v=vs.85).aspx) method. The placed resource is then created inside the heap using the [ID3D12Device::CreatePlacedResource](https://msdn.microsoft.com/en-us/library/dn899180(v=vs.85).aspx) method.
 
-![image](../images/Placed-Resource.png)
+![image](images/Placed-Resource.png)
+
+The size of the heap that will be used for placed resources must be known in advance. Creating larger than necessary heaps is not a good idea because the only way to reclaim the GPU memory used by the heap is to either evict the heap or completely destroy it. Since you can only evict an entire heap from GPU memory, any resources that are currently placed in the heap must not be referenced in a command list that is being executed on the GPU.
 
 Multiple placed resources can be aliased in a heap as long as they don’t access the same aliased heap space at the same time.
 
-![image](../images/Aliasing-Placed-Resources.png)
+![image](images/Aliasing-Placed-Resources.png)
 
-Aliasing can help to reduce oversubscribing GPU memory usage since the size of the heap can be limited to the size of the largest resource that will be placed in the heap at any moment in time. Aliasing can be used as long as the same space in the heap is not used by multiple aliasing resources at the same time. Aliased resources can be swapped using a [resource aliasing barrier](https://msdn.microsoft.com/en-us/library/dn986739(v=vs.85).aspx).
+Aliasing can help to reduce oversubscribing GPU memory usage since the size of the heap can be limited to the size of the largest resource that will be placed in the heap at any moment in time. Aliasing can be used as long as the same space in the heap is not used by multiple aliasing resources at the same time. Aliased resources can be swapped using a [D3D12_RESOURCE_ALIASING_BARRIER](https://msdn.microsoft.com/en-us/library/dn986739(v=vs.85).aspx).
 
-* Reserved Resources
+* **Reserved Resources**
 
 Reserved resources are created without specifying a heap to place the resource in. Reserved resources are created using the [ID3D12Device::CreateReservedResource](https://msdn.microsoft.com/en-us/library/dn899181(v=vs.85).aspx) method. Before a reserved resource can be used, it must be mapped to a heap using the [ID3D12CommandQueue::UpdateTileMappings](https://msdn.microsoft.com/en-us/library/dn788641(v=vs.85).aspx) method.
 
-![image](../images/Reserved-Resources.png)
+![image](images/Reserved-Resources.png)
 
 Reserved resources can be created that are larger than can fit in a single heap. Portions of the reserved resource can be mapped (and unmapped) using one or more heaps residing in physical GPU memory.
 
-Using reserved resources, a large volume texture can be created using virtual memory but only the resident spaces of the volume texture needs to be mapped to physical memory. This resource type provides options for implementing rendering techniques that use sparse voxel octrees without exceeding GPU memory budgets.
+Using reserved resources, a large volume texture can be created using virtual memory but only the resident spaces of the volume texture needs to be mapped to physical memory. This resource type provides options for implementing rendering techniques that use **sparse voxel octrees** without exceeding GPU memory budgets.
 
 ### Pipeline State Object
 
@@ -163,7 +213,7 @@ In previous versions of DirectX, different resources could be bound to the same 
 
 DirectX 12 root signatures require that all shader parameters be defined for all stages of the rendering pipeline and registers used across different shader stages may not overlap. In order to provide a work-around for legacy shaders that may violate this rule, Shader Model 5.1 introduces register spaces. Resources can overlap register slots as long as they don’t also overlap register spaces.
 
-![image](../images/Registers-and-Spaces.png)
+![image](images/Registers-and-Spaces.png)
 
 ### Root Signature Parameters
 
@@ -216,7 +266,7 @@ Each inline descriptor in the root signature costs 2 DWORDs (64-bits)
 
 A descriptor table defines several descriptor ranges that are placed consecutively in a GPU visible descriptor heap.
 
-![image](../images/Descriptor-Tables.png)
+![image](images/Descriptor-Tables.png)
 The above image illustrates a root signature with a single descriptor table parameter (A). The descriptor table contains three descriptor ranges (B): 3 Constant Buffer Views (CBV), 4 Shader Resource Views (SRV), and 2 Unordered Access Views (UAV). CBV’s, SRV’s and UAV’s can be referenced in the same descriptor table since all three types of descriptors can be stored in the same descriptor heap. The GPU visible descriptors (C) must appear consecutively in a GPU visible descriptor heap but the resources that they refer to (D) may appear anywhere in GPU memory, even in different resource heaps.
 
 Each descriptor table in the root signature costs 1 DWORD (32-bits)
@@ -230,14 +280,24 @@ Static samplers do not use any space in the root signature and do not count agai
 ### Root Signature Constraints
 
 Root signatures are limited to 64 DWORDs (2048-bits) [5]. Each root parameter has a cost that counts towards the root signature limit:
+
 * 32-bit constants each costs 1 DWORD
 * Inline descriptors each costs 2 DWORDs
 * Descriptor tables each costs 1 DWORD
+
 Static samplers defined in the root signature do not count towards the size of the root signature.
 
 The cost of accessing a root argument in a root signature in terms of levels of indirection is zero for 32-bit constants, 1 for inline descriptors, and 2 for descriptor tables
 
 The graphics programmer should strive to achieve a root signature that is as small as possible but balance the flexibility of using a larger root signature. Parameters in the root signature should be ordered based on the likelihood that the arguments will change. If the root arguments are changing often then they should appear first in the root signature. If the root arguments are not changing often, then they should be the last parameters that appear in the root signature. Since 32-bit constants and inline descriptors have better performance in terms of level of indirection, they should be favored over using descriptor tables as long as the size of the root signature does not become to large.
+
+
+
+
+
+
+
+
 
 ### Group Shared Memory
 
@@ -261,7 +321,7 @@ Since sRGB textures are not supported for UAV writes, a UAV compatible copy of t
 
 For example, a 5×5 texture reduces to a size of 2.5×2.5. Of course, it is not possible to have a fraction of a pixel in a texture so the 0.5 must be truncated from the texture’s dimension. If only a single sample is taken from the source mip to generate the destination mip, then the resulting mip will be undersampled resulting in a slightly incorrect color in the final mip. If several mip levels are undersampled, noticeable artifacts can appear in the rendered image. In order to avoid undersampling the texture, several samples are taken from the source mip and blended together to produce the destination mip color.
 
-![image](../images/Undersampled-Mipmaps.png)
+![image](images/Undersampled-Mipmaps.png)
 
 ### sRGB
 
@@ -299,7 +359,7 @@ For more information, refer to the MSDN blog post at: https://blogs.msdn.microso
 
 The [D3D_PRIMITIVE_TOPOLOGY](https://learn.microsoft.com/en-us/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_primitive_topology) enumeration specifies how the Input Assembler stage interprets the vertex data that is bound to the rendering pipeline.
 
-![image](../images/Primitive-Topologies.gif)
+![image](images/Primitive-Topologies.gif)
 
 
 
@@ -307,7 +367,7 @@ The [D3D_PRIMITIVE_TOPOLOGY](https://learn.microsoft.com/en-us/windows/win32/api
 
 A front-facing polygon is said to be facing the viewer while a back-facing polygon is said to be facing away from the viewer. Since back-facing polygons are generally not visible to the viewer (assuming the mesh is fully convex and the material is not transparent) then it is not efficient to shade the pixels that will not be visible in the final render. As an optimization, it is possible to tell the Rasterizer stage to cull (remove from the rendering pipeline) back-facing polygons.
 
-![image](../images/Cube-Vertices-and-Faces-1.png)
+![image](images/Cube-Vertices-and-Faces-1.png)
 
 
 
@@ -334,7 +394,7 @@ Similar to the Vertex Buffer View, the [D3D12_INDEX_BUFFER_VIEW](https://msdn.mi
 
 In the previous lesson, a swap-chain is created to be the target for the final rendered image that is presented to the user’s screen. The swap-chain can contain two or more texture buffers but it does not create a depth buffer. A depth buffer is not strictly required for rendering. When all of the elements in a scene are 2D (common for side-scrolling platform games), then the scene elements can be rendered from back-to-front and all elements will appear correctly. When rendering a 3D scene (even if the scene only contains a single geometric object) then a depth buffer is required for achieving correct rendering. The depth buffer stores the depth of a pixel in normalized device coordinate space (NDC). Each pixel stores a depth value in the range {0⋯1} where 0 is closest to the viewer (near clipping plane) and 1 is farthest away (far clipping plane).
 
-![image](../images/Depth-Buffer-View-Space-Normalized-Device-Coordinate-Space.png)
+![image](images/Depth-Buffer-View-Space-Normalized-Device-Coordinate-Space.png)
 
 
 
@@ -417,3 +477,5 @@ MaxAnisotropy
 Clamping value used if D3D12_FILTER_ANISOTROPIC or D3D12_FILTER_COMPARISON_ANISOTROPIC is specified as the filter. Valid values are between 1 and 16.
 
 D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+
+You can use the ID3D12Device::GetNodeCount method to query the number of GPU adapter nodes on the system.

@@ -32,11 +32,4 @@
 
 <https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl>
 
-..\..\lib\Debug\GameFrameworkd.lib
-..\..\lib\Debug\DX12Libd.lib
-..\..\lib\Debug\gainput-d.lib
-..\..\GameFramework\GameFramework.dir\$(Configuration)\GameFramework.res
-..\..\lib\Debug\DirectXTexd.lib
-..\..\lib\Debug\assimp-vc143-mtd.lib
-..\..\lib\Debug\zlibstaticd.lib
-..\..\lib\Debug\IrrXMLd.lib
+<http://diligentgraphics.com/diligent-engine/architecture/d3d12/>

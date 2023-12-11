@@ -4,9 +4,9 @@
 
 **Lambert's Cosine Law**:
 
-![iamge](../images/Lambert'sCosineLaw-1.png)
+![iamge](images/Lambert'sCosineLaw-1.png)
 
-![iamge](../images/Lambert'sCosineLaw-2.png)
+![iamge](images/Lambert'sCosineLaw-2.png)
 
 Let BL represent the quantity of incoming light, md be the diffuse albedo color, L be
 the light vector, and n be the surface normal. Then the amount of diffuse light
@@ -30,7 +30,7 @@ on the material (RF(0)) and the angle between the normal and light vector.
 
 **Roughness**
 
-![image](../images/LightModel.png)
+![image](images/LightModel.png)
 
 ### Parallel Light
 

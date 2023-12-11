@@ -90,7 +90,7 @@ just has direction. For flat objects this defect of environment mapping is very 
 shortcoming of environment mapping goes largely unnoticed, since the curvature
 of the surface causes the refl ection vector to vary.
 
-![image](../images/CubeMapping.png)
+![image](images/CubeMapping.png)
 
 One solution is to associate some proxy geometry with the environment map.
 For example, suppose we have an environment map for a square room. We can

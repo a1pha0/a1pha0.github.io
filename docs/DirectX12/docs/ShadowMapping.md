@@ -61,14 +61,14 @@ Once we have built the shadow map, we render the scene as normal from the perspe
 
 #### Depth Bias
 
-![image](../images/ShadowAcne.png)
+![image](images/ShadowAcne.png)
 
 A simple solution is to apply a constant bias to offset the shadow map depth.
 Too much biasing results in an artifact called peter-panning, where the shadow appears to become detached from the object.
 
 Unfortunately, a fixed bias does not work for all geometry. In particular, triangles with large slopes (with respect to the light source) need a larger bias.
 
-![iamge](../images/Peter-panning.png)
+![iamge](images/Peter-panning.png)
 
 What we want is a way to measure the polygon slope with respect to the light source, and apply more bias for larger sloped polygons. Fortunately, graphics hardware has intrinsic support for this via the so-called slope-scaled-bias rasterization state properties. See [D3D12_RASTERIZER_DESC](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc):
 
@@ -131,7 +131,7 @@ $ lit_1 = d \leq s_1 (false) $
 
 When the results are interpolated, we get that p is is 1/3rd in shadow, which is incorrect as nothing is occluding p.
 
-![iamge](../images/PCF.png)
+![iamge](images/PCF.png)
 
 Observe that more depth biasing would fix the error. However, in this example, we are only sampling the next door neighbor texels in the shadow map. If we widen the PCF kernel, then even more biasing is needed. Thus for small PCF kernels, simply doing the depth bias is enough to counter this problem and it is nothing to worry about. But for large PCF kernels such as 5 $ \times $ 5 or 9 $ \times $ 9, which are used to make soft shadows, this can become a real problem.
 
