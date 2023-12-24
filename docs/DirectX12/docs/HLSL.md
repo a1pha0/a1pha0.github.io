@@ -94,7 +94,7 @@ There are several System Value Semantics that can be used to query the index of 
 * SV_GroupIndex: The flattened 1D index of the thread within the thread group.
 Unfortunately, it is not possible to query the total number of thread groups in a dispatch or the total number of threads in a thread group. The number of groups in a dispatch must be sent as an argument to the compute shader (using a constant buffer or 32-bit constants).
 
-![image](../images/Compute-Dispatch-1.png)
+![image](images/Compute-Dispatch-1.png)
 
 The above image depicts a Dispatch of (2,2,1) thread groups. Each thread group has (4,4,1) threads. In this example, the SV_DispatchThreadID of the last thread in the dispatch is: =(1,1,0)⋅(4,4,1)+(3,3,0)=(4,4,0)+(3,3,0)=(7,7,0) And the SV_GroupIndex of the last thread in the dispatch is: =(0⋅4⋅4)+(3⋅4)+3=0+12+3=15
 

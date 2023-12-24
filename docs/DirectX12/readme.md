@@ -22,6 +22,8 @@
 
 [Ambient Occlusion](./docs/AmbientOcclusion.md)
 
+[HLSL](./docs/HLSL.md)
+
 ## Reference
 
 [Introduction to 3D Game Programming with DirectX 12](https://www.d3dcoder.net/d3d12.htm)
